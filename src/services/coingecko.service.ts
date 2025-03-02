@@ -5,18 +5,16 @@ import { Injectable } from '@nestjs/common';
 export class CoinGeckoService {
   private readonly BASE_URL = 'https://api.coingecko.com/api/v3';
 
-  async getCoinDetails(
-    symbol: string,
-  ): Promise<{ price: number | null; image: string | null }> {
+  async getCoinDetails(coinId: string): Promise<any> {
     try {
-      const response = await axios.get(`${this.BASE_URL}/coins/${symbol}`);
-
+      const url = `${this.BASE_URL}/coins/${coinId}`;
+      const response = await axios.get(url);
       return {
-        price: response.data?.market_data?.current_price?.usd ?? null,
-        image: response.data?.image?.thumb ?? null,
+        price: response.data.market_data?.current_price?.usd || null,
+        image: response.data.image?.thumb || null,
       };
     } catch (error) {
-      console.error(`⚠️ CoinGecko API error for ${symbol}:`, error);
+      console.error(`⚠️ CoinGecko API error for ${coinId}:`, error.message);
       return { price: null, image: null };
     }
   }

@@ -1,25 +1,28 @@
 import {
   Injectable,
   NotFoundException,
-  InternalServerErrorException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Cryptocurrency } from '../entities/cryptocurrency.entity';
 import { CreateCryptocurrencyDto } from '../dto/create-cryptocurrency.dto';
 import { UpdateCryptocurrencyDto } from '../dto/update-cryptocurrency.dto';
 import { UUID } from 'crypto';
-import { CoinGeckoService } from '../services/coingecko.service';
+import { CryptoGateway } from 'src/gateways/crypto.gateway';
 
 @Injectable()
 export class CryptocurrencyService {
   constructor(
     @InjectModel(Cryptocurrency)
     private readonly cryptocurrencyModel: typeof Cryptocurrency,
-    private readonly coinGeckoService: CoinGeckoService,
+
+    @Inject(forwardRef(() => CryptoGateway))
+    private readonly cryptoGateway: CryptoGateway,
   ) {}
 
   async findAll(): Promise<Cryptocurrency[]> {
-    const cryptos = await this.cryptocurrencyModel.findAll({ raw: true });
+    const cryptos = await this.cryptocurrencyModel.findAll();
 
     return cryptos;
   }
@@ -34,10 +37,19 @@ export class CryptocurrencyService {
   }
 
   async create(dto: CreateCryptocurrencyDto): Promise<Cryptocurrency> {
-    return this.cryptocurrencyModel.create({ ...dto } as Omit<
+    const crypto = await this.cryptocurrencyModel.create({ ...dto } as Omit<
       Cryptocurrency,
       'id'
     >);
+
+    const symbol = crypto.getDataValue('symbol');
+    if (!symbol) {
+      return crypto;
+    }
+
+    this.cryptoGateway.sendCoinUpdates(symbol);
+
+    return crypto;
   }
 
   async update(
@@ -46,6 +58,9 @@ export class CryptocurrencyService {
   ): Promise<Cryptocurrency> {
     const crypto = await this.findOne(id);
     await crypto.update(dto);
+
+    this.cryptoGateway.sendCoinUpdates(crypto.symbol);
+
     return crypto;
   }
 

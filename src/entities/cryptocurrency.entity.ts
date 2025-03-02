@@ -1,28 +1,25 @@
 import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
-@Table({ tableName: 'cryptocurrencies' })
-export class Cryptocurrency extends Model<Cryptocurrency> {
+@Table({
+  tableName: 'cryptocurrencies',
+  timestamps: true,
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+})
+export class Cryptocurrency extends Model {
   @Column({
-    type: DataType.STRING,
-    allowNull: false,
+    type: DataType.UUID,
+    primaryKey: true,
+    defaultValue: DataType.UUIDV4,
   })
-  name: string;
+  declare id: string;
 
-  @Column({
-    type: DataType.STRING,
-    allowNull: false,
-  })
-  symbol: string;
+  @Column({ type: DataType.STRING, allowNull: false })
+  declare name: string;
 
-  @Column({
-    type: DataType.DECIMAL(18, 8),
-    allowNull: false,
-  })
-  price: number;
+  @Column({ type: DataType.STRING, allowNull: false })
+  declare symbol: string;
 
-  @Column({
-    type: DataType.DATE,
-    defaultValue: DataType.NOW,
-  })
-  created_at: Date;
+  @Column({ type: DataType.DECIMAL(18, 8), allowNull: false })
+  declare price: number;
 }

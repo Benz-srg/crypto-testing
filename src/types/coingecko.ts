@@ -11,3 +11,19 @@ export type CoinGeckoData = {
     thumb: string;
   };
 };
+
+export interface CoinDetails {
+  image: string | null;
+  price: number | null;
+}
+
+export interface CoinGeckoCoin {
+  id: string;
+  name: string;
+  symbol: string;
+}
+
+export interface CoinGeckoMarketData {
+  id: string;
+  current_price: number;
+}

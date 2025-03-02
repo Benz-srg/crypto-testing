@@ -23,20 +23,14 @@ export class CryptocurrencyResponseDto {
   price: number;
 
   @ApiProperty({
-    example: 60500.25,
-    description: 'Current price from CoinGecko in USDT',
-  })
-  currentPrice: number;
-
-  @ApiProperty({
-    example: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
-    description: 'Image URL of the cryptocurrency',
-  })
-  image: string;
-
-  @ApiProperty({
     example: '2025-03-02T09:24:55.078Z',
     description: 'Timestamp when the cryptocurrency was added',
   })
-  created_at: Date;
+  createdAt: Date;
+
+  @ApiProperty({
+    example: '2025-03-02T09:24:55.078Z',
+    description: 'Timestamp when the cryptocurrency was updated',
+  })
+  updatedAt: Date;
 }

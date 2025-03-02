@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateCryptocurrencyDto {
   @ApiProperty({
-    example: 'Bitcoin',
+    example: 'Doge Coin',
     description: 'The full name of the cryptocurrency',
   })
   @IsNotEmpty()
@@ -11,7 +11,7 @@ export class CreateCryptocurrencyDto {
   name: string;
 
   @ApiProperty({
-    example: 'BTC',
+    example: 'DOGE',
     description: 'The ticker symbol of the cryptocurrency',
   })
   @IsNotEmpty()
@@ -19,7 +19,7 @@ export class CreateCryptocurrencyDto {
   symbol: string;
 
   @ApiProperty({
-    example: 60500.25,
+    example: 0.2,
     description: 'The current price of the cryptocurrency in USD',
   })
   @IsNotEmpty()
