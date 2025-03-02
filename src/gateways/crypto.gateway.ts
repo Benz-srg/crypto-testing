@@ -1,68 +1,58 @@
 import {
   WebSocketGateway,
   WebSocketServer,
-  OnGatewayInit,
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
-import { Injectable, Logger } from '@nestjs/common';
+import { Server } from 'socket.io';
 import { CryptocurrencyService } from '../services/cryptocurrency.service';
 import { CoinGeckoService } from '../services/coingecko.service';
+import { formatCryptoName } from 'src/format/utils';
 
 @WebSocketGateway({ cors: true })
-@Injectable()
-export class CryptoGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
-  @WebSocketServer() server: Server;
-  private readonly logger = new Logger(CryptoGateway.name);
+export class CryptoGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer()
+  server: Server;
 
   constructor(
-    private readonly cryptocurrencyService: CryptocurrencyService,
-    private readonly coinGeckoService: CoinGeckoService,
+    private readonly cryptoService: CryptocurrencyService,
+    private readonly coingeckoService: CoinGeckoService,
   ) {}
 
-  afterInit() {
-    this.logger.log('WebSocket Initialized');
-  }
-
-  handleConnection(client: Socket) {
-    this.logger.log(`Client connected: ${client.id}`);
-    this.sendCryptoList();
-  }
-
-  handleDisconnect(client: Socket) {
-    this.logger.log(`Client disconnected: ${client.id}`);
-  }
-
-  async sendCryptoList() {
-    this.logger.log('Fetching cryptocurrency list from database...');
-    const cryptos = await this.cryptocurrencyService.findAll();
-
+  async handleConnection() {
+    const cryptos = await this.cryptoService.findAll();
     const enrichedCryptos = await Promise.all(
       cryptos.map(async (crypto) => {
+        if (!crypto.symbol) {
+          return {
+            id: crypto.id,
+            name: crypto.name ?? 'Unknown',
+            symbol: crypto.symbol ?? 'Unknown',
+            price: Number(crypto.price) ?? 0,
+            image: null,
+          };
+        }
+
         try {
-          const coingeckoData = await this.coinGeckoService.getCoinDetails(
-            crypto.symbol.toLowerCase(),
+          const coingeckoData = await this.coingeckoService.getCoinDetails(
+            formatCryptoName(crypto.name),
           );
           return {
             id: crypto.id,
             name: crypto.name,
             symbol: crypto.symbol,
-            price: coingeckoData.price,
-            image: coingeckoData.image,
-            created_at: crypto.created_at,
+            price: coingeckoData.price
+              ? Number(coingeckoData.price)
+              : Number(crypto.price),
+            image: coingeckoData.image ?? null,
           };
         } catch (error) {
-          this.logger.error(`Failed to fetch data for ${crypto.symbol}`);
           return {
             id: crypto.id,
             name: crypto.name,
             symbol: crypto.symbol,
-            price: crypto.price,
+            price: Number(crypto.price) ?? 0,
             image: null,
-            created_at: crypto.created_at,
           };
         }
       }),
@@ -71,24 +61,30 @@ export class CryptoGateway
     this.server.emit('cryptoList', enrichedCryptos);
   }
 
-  async sendCoinUpdates(asset: string) {
+  async sendCoinUpdates(cryptoSymbol: string) {
     try {
-      this.logger.log(`Fetching update for ${asset}...`);
-      const coingeckoData = await this.coinGeckoService.getCoinDetails(asset);
+      const crypto = await this.cryptoService.findBySymbol(cryptoSymbol);
+      if (!crypto) return;
+
+      const coingeckoData = await this.coingeckoService.getCoinDetails(
+        formatCryptoName(crypto.name),
+      );
 
       const updatedCrypto = {
-        asset: coingeckoData.asset,
-        price: coingeckoData.price,
-        image: coingeckoData.image,
-        fullName: coingeckoData.fullName,
+        id: crypto.id,
+        name: crypto.name,
+        symbol: crypto.symbol,
+        price: coingeckoData.price ?? crypto.price,
+        image: coingeckoData.image ?? null,
       };
 
       this.server.emit('coinUpdate', updatedCrypto);
-      this.logger.log(`Sent update for ${asset}: $${updatedCrypto.price}`);
     } catch (error) {
-      this.logger.error(
-        `Failed to fetch update for ${asset}: ${error.message}`,
-      );
+      console.error(`⚠️ Failed to fetch update for ${cryptoSymbol}`, error);
     }
+  }
+
+  handleDisconnect() {
+    console.log('❌ WebSocket Disconnected');
   }
 }

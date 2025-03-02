@@ -1,23 +1,7 @@
-import {
-  Table,
-  Column,
-  Model,
-  DataType,
-  PrimaryKey,
-  Default,
-} from 'sequelize-typescript';
-import { v4 as uuidv4 } from 'uuid';
+import { Table, Column, Model, DataType } from 'sequelize-typescript';
 
 @Table({ tableName: 'cryptocurrencies' })
-export class Cryptocurrency extends Model {
-  @PrimaryKey
-  @Default(uuidv4)
-  @Column({
-    type: DataType.UUID,
-    allowNull: false,
-  })
-  declare id: string;
-
+export class Cryptocurrency extends Model<Cryptocurrency> {
   @Column({
     type: DataType.STRING,
     allowNull: false,
@@ -27,7 +11,6 @@ export class Cryptocurrency extends Model {
   @Column({
     type: DataType.STRING,
     allowNull: false,
-    unique: true,
   })
   symbol: string;
 

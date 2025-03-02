@@ -18,45 +18,10 @@ export class CryptocurrencyService {
     private readonly coinGeckoService: CoinGeckoService,
   ) {}
 
-  async findAll(): Promise<any[]> {
-    try {
-      const cryptos = await this.cryptocurrencyModel.findAll();
+  async findAll(): Promise<Cryptocurrency[]> {
+    const cryptos = await this.cryptocurrencyModel.findAll({ raw: true });
 
-      const enrichedCryptos = await Promise.all(
-        cryptos.map(async (crypto) => {
-          try {
-            const coingeckoData = await this.coinGeckoService.getCoinDetails(
-              crypto.symbol.toLowerCase(),
-            );
-            return {
-              id: crypto.id,
-              name: crypto.name,
-              symbol: crypto.symbol,
-              price: crypto.price,
-              currentPrice: coingeckoData.price,
-              image: coingeckoData.image,
-              created_at: crypto.created_at,
-            };
-          } catch (error) {
-            return {
-              id: crypto.id,
-              name: crypto.name,
-              symbol: crypto.symbol,
-              price: crypto.price,
-              currentPrice: null,
-              image: null,
-              created_at: crypto.created_at,
-            };
-          }
-        }),
-      );
-
-      return enrichedCryptos;
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'Failed to fetch cryptocurrency data',
-      );
-    }
+    return cryptos;
   }
 
   async findOne(id: UUID): Promise<Cryptocurrency> {
@@ -64,6 +29,7 @@ export class CryptocurrencyService {
     if (!crypto) {
       throw new NotFoundException(`Cryptocurrency with id ${id} not found`);
     }
+
     return crypto;
   }
 
@@ -86,5 +52,9 @@ export class CryptocurrencyService {
   async remove(id: UUID): Promise<void> {
     const crypto = await this.findOne(id);
     await crypto.destroy();
+  }
+
+  async findBySymbol(symbol: string): Promise<Cryptocurrency | null> {
+    return this.cryptocurrencyModel.findOne({ where: { symbol } });
   }
 }

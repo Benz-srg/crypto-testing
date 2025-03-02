@@ -1,24 +1,23 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import axios from 'axios';
-import { CoinDetailsDto } from '../dto/coin-details.dto';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class CoinGeckoService {
   private readonly BASE_URL = 'https://api.coingecko.com/api/v3';
 
-  async getCoinDetails(asset: string): Promise<CoinDetailsDto> {
+  async getCoinDetails(
+    symbol: string,
+  ): Promise<{ price: number | null; image: string | null }> {
     try {
-      const response = await axios.get(`${this.BASE_URL}/coins/${asset}`);
-      const data = response.data;
+      const response = await axios.get(`${this.BASE_URL}/coins/${symbol}`);
 
       return {
-        fullName: data.name,
-        asset: data.symbol.toUpperCase(),
-        price: data.market_data.current_price.usd,
-        image: data.image.large,
+        price: response.data?.market_data?.current_price?.usd ?? null,
+        image: response.data?.image?.thumb ?? null,
       };
     } catch (error) {
-      throw new HttpException('Coin not found', HttpStatus.NOT_FOUND);
+      console.error(`⚠️ CoinGecko API error for ${symbol}:`, error);
+      return { price: null, image: null };
     }
   }
 }
