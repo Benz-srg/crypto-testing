@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    container_name: crypto_db
+    environment:
+      POSTGRES_USER: crypto_testing
+      POSTGRES_PASSWORD: crypto_testing_password
+      POSTGRES_DB: crypto_testing
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    container_name: nest_app
+    depends_on:
+      - db
+    environment:
+      DB_HOST: crypto_db
+      DB_PORT: 5432
+      DB_USER: crypto_testing
+      DB_PASSWORD: crypto_testing_password
+      DB_NAME: crypto_testing
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/usr/src/app
+    command: >
+      sh -c "yarn start:dev"
+
+volumes:
+  postgres_data:
